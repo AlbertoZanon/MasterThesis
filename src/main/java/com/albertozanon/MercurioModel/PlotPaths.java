@@ -1,6 +1,5 @@
 package com.albertozanon.MercurioModel;
 
-
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Arrays;
@@ -42,6 +41,7 @@ import net.finmath.montecarlo.RandomVariableFactory;
 import net.finmath.montecarlo.RandomVariableFromArrayFactory;
 import net.finmath.montecarlo.assetderivativevaluation.MonteCarloAssetModel;
 import net.finmath.montecarlo.assetderivativevaluation.models.BlackScholesModel;
+import net.finmath.montecarlo.assetderivativevaluation.products.EuropeanOption;
 import net.finmath.montecarlo.interestrate.LIBORMarketModel;
 import net.finmath.montecarlo.interestrate.LIBORModelMonteCarloSimulationModel;
 import net.finmath.montecarlo.interestrate.LIBORMonteCarloSimulationFromLIBORModel;
@@ -55,6 +55,7 @@ import net.finmath.optimizer.SolverException;
 import net.finmath.plots.Named;
 import net.finmath.plots.Plot;
 import net.finmath.plots.Plot2D;
+import net.finmath.plots.Plots;
 import net.finmath.stochastic.RandomVariable;
 import net.finmath.time.Schedule;
 import net.finmath.time.ScheduleGenerator;
@@ -67,7 +68,40 @@ import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHo
  *
  * @author Chrisitan Fries
  */
-public class Plot2DTest {
+public class PlotPaths {
+	@Test
+	public void test2() throws CalculationException, InterruptedException {
+
+
+		final double modelInitialValue = 100.0;
+		final double modelRiskFreeRate = 0.05;
+		final double modelVolatility = 0.20;
+
+		final double maturity = 3.0;
+		final double strike = 106.0;
+
+		// Create a model
+		final var model = new BlackScholesModel(modelInitialValue, modelRiskFreeRate, modelVolatility);
+
+		// Create a corresponding MC process
+		final var td = new TimeDiscretizationFromArray(0.0, 300, 0.01);
+		final var brownianMotion = new BrownianMotionFromMersenneRandomNumbers(td, 1, 100000, 3231);
+		final var process = new EulerSchemeFromProcessModel(model, brownianMotion);
+
+		// Using the process (Euler scheme), create an MC simulation of a Black-Scholes model
+		final var simulation = new MonteCarloAssetModel(process);
+
+		final EuropeanOption europeanOption = new EuropeanOption(maturity, strike);
+
+		try {
+			final Plot plot = Plots.createHistogramBehindValues(simulation.getAssetValue(maturity, 0 /* assetIndex */), europeanOption.getValue(0.0, simulation), 100, 5.0);
+			plot.show();
+			Thread.sleep(20000);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 
 	@Test
 	public void test() throws SolverException, CalculationException {
@@ -88,9 +122,9 @@ public class Plot2DTest {
 		final ForwardCurve forwardCurve = curveModel.getForwardCurve("ForwardCurveFromDiscountCurve(discountCurve-EUR,1D)");
 		final DiscountCurve discountCurve = curveModel.getDiscountCurve("discountCurve-EUR");
 		//		curveModel.addCurve(discountCurve.getName(), discountCurve);
-		final double lastTime	= 10.0;
+		final double lastTime	= 5.0;
 		final double dtLibor	= 0.5;
-		final double dt	= 1.0;
+		final double dt	= 0.001;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
 		final TimeDiscretization liborPeriodDiscretization = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dtLibor), dtLibor);
 		final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, 2109 /* seed */); 
@@ -131,7 +165,7 @@ public class Plot2DTest {
 
 			RandomVariable z = null;
 			try {
-				z = simulationMercurioModelNONcalibrated.getLIBOR(time,9.0,9.5);
+				z = simulationMercurioModelNONcalibrated.getLIBOR(time,4.0,4.5);
 			} catch (CalculationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -140,10 +174,10 @@ public class Plot2DTest {
 			return path;
 		};
 
-		final Plot plot = new Plot2D(0.0, 10.0, 10, Arrays.asList(
+		final Plot plot = new Plot2D(0.0, 5.0, 10000, Arrays.asList(
 				new Named<DoubleUnaryOperator>("Maturity 1", function)));
 
-		plot.setTitle("Black-Scholes Model European Option Value").setXAxisLabel("strike").setYAxisLabel("value").setIsLegendVisible(true);
+		plot.setTitle("MC sim").setXAxisLabel("Time").setYAxisLabel("Value").setIsLegendVisible(true);
 		try {
 			plot.show();
 		} catch (final Exception e) {
