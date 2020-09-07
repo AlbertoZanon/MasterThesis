@@ -26,6 +26,9 @@ import java.util.concurrent.FutureTask;
 
 import org.junit.Assert;
 
+import com.albertozanon.MercurioModel.LIBORCorrelationModelExponentialDecayWithMercurioModification;
+import com.albertozanon.MercurioModel.LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification;
+
 import net.finmath.exception.CalculationException;
 import net.finmath.functions.AnalyticFormulas;
 import net.finmath.marketdata.calibration.ParameterObject;
@@ -50,7 +53,6 @@ import net.finmath.montecarlo.interestrate.CalibrationProduct;
 import net.finmath.montecarlo.interestrate.LIBORModelMonteCarloSimulationModel;
 import net.finmath.montecarlo.interestrate.LIBORMonteCarloSimulationFromTermStructureModel;
 import net.finmath.montecarlo.interestrate.TermStructureModel;
-import net.finmath.montecarlo.interestrate.models.HullWhiteModel;
 import net.finmath.montecarlo.interestrate.models.LIBORMarketModelFromCovarianceModel;
 import net.finmath.montecarlo.interestrate.models.LIBORMarketModelWithTenorRefinement;
 import net.finmath.montecarlo.interestrate.models.covariance.AbstractLIBORCovarianceModelParametric;
@@ -61,14 +63,15 @@ import net.finmath.montecarlo.interestrate.models.covariance.LIBORCorrelationMod
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModelExponentialForm5Param;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModelFromVolatilityAndCorrelation;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModel;
+import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelFourParameterExponentialForm;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelPiecewiseConstant;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelTimeHomogenousPiecewiseConstant;
-import net.finmath.montecarlo.interestrate.models.covariance.ShortRateVolatilityModel;
-import net.finmath.montecarlo.interestrate.models.covariance.ShortRateVolatilityModelAsGiven;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructCovarianceModelFromLIBORCovarianceModelParametric;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureCovarianceModelParametric;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureTenorTimeScalingInterface;
+
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureTenorTimeScalingPicewiseConstant;
+
 import net.finmath.montecarlo.interestrate.products.AbstractLIBORMonteCarloProduct;
 import net.finmath.montecarlo.interestrate.products.Caplet;
 import net.finmath.montecarlo.interestrate.products.SwaptionSimple;
@@ -95,7 +98,7 @@ import net.finmath.time.daycount.DayCountConvention_ACT_365;
  */
 public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 
-	private final int numberOfPaths		= 1;
+	private final int numberOfPaths		= 1000;
 	private final int numberOfFactors	= 1;
 
 	private static DecimalFormat formatterValue		= new DecimalFormat(" ##0.0000%;-##0.0000%", new DecimalFormatSymbols(Locale.ENGLISH));
@@ -297,35 +300,41 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, 31415 /* seed */);
 	
 			LIBORModelMonteCarloSimulationModel simulationCalibrated = null;
-			
-			TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00,	1,0, 2.00, 3.00, 20.0);
+			TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00,  7.00,  10.0, 15.0, 21.0);		// needed if you use LIBORVolatilityModelPiecewiseConstantWithMercurioModification: TimeDiscretization  = new TimeDiscretizationFromArray(0.0, 0.25, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0);
+
+			//TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00,	1,0, 2.00, 3.00, 20.0);
 			double[] arrayValues = new double [timeToMaturityDiscretization.getNumberOfTimes()];
 			for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.2/100;}
 
-			final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstant(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
-			final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecay(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
+		
 			
-//			AbstractLIBORCovarianceModelParametric covarianceModelParametric = new LIBORCovarianceModelExponentialForm5Param(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, new double[] { 0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 0.10} );
+			//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstant(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
+			//final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecay(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
+			LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialForm(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.0005, 0.1, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
+
+			final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecay(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
+
+			//AbstractLIBORCovarianceModelParametric covarianceModelParametric = new LIBORCovarianceModelExponentialForm5Param(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, new double[] { 0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 0.10} );
 			AbstractLIBORCovarianceModelParametric	covarianceModelParametric = new LIBORCovarianceModelFromVolatilityAndCorrelation(timeDiscretizationFromArray, liborPeriodDiscretization, volatilityModel, correlationModel);
 
 //			final AbstractLIBORCovarianceModelParametric covarianceModelBlended = new BlendedLocalVolatilityModel(covarianceModelParametric, 0.0, false);
 			final AbstractLIBORCovarianceModelParametric covarianceModelDisplaced = new DisplacedLocalVolatilityModel(covarianceModelParametric, 1.0/0.25, false /* isCalibrateable */);
 
-			final TimeDiscretization tenorTimeScalingDiscretization = new TimeDiscretizationFromArray(0.0, 20.0, 0.25, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+			final TimeDiscretization tenorTimeScalingDiscretization = new TimeDiscretizationFromArray(0.0, 20.0, 0.5, ShortPeriodLocation.SHORT_PERIOD_AT_START);
 			final double[] tenorTimeScalings = new double[tenorTimeScalingDiscretization.getNumberOfTimes()];
 			Arrays.fill(tenorTimeScalings, 0.0);
 			final TermStructureTenorTimeScalingInterface tenorTimeScalingModel = new TermStructureTenorTimeScalingPicewiseConstant(tenorTimeScalingDiscretization, tenorTimeScalings);
 
 			// Create blended local volatility model with fixed parameter 0.0 (that is "lognormal").
-			double[] scalingAndVol= new double[tenorTimeScalingDiscretization.getNumberOfTimes()+volatilityModel.getParameter().length-1  ];
-			for (int j=0;j<(tenorTimeScalingDiscretization.getNumberOfTimes()+volatilityModel.getParameter().length-1);j++)
-			{
-			   scalingAndVol[j]= paramTimeScalingVolParam[j];
-			}
+//			double[] scalingAndVol= new double[tenorTimeScalingDiscretization.getNumberOfTimes()+volatilityModel.getParameter().length-1  ];
+//			for (int j=0;j<(tenorTimeScalingDiscretization.getNumberOfTimes()+volatilityModel.getParameter().length-1);j++)
+//			{
+//			   scalingAndVol[j]= paramTimeScalingVolParam[j];
+//			}
 			
 			
 			TermStructureCovarianceModelParametric termStructureCovarianceModel = new TermStructCovarianceModelFromLIBORCovarianceModelParametric(tenorTimeScalingModel, covarianceModelParametric );
-			termStructureCovarianceModel = termStructureCovarianceModel.getCloneWithModifiedParameters(scalingAndVol);
+//			termStructureCovarianceModel = termStructureCovarianceModel.getCloneWithModifiedParameters(scalingAndVol);
 			double[] bestParameters = null;
 			for(int i = 0; i<1; i++) {
 				if(i>0) {
@@ -356,13 +365,13 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 				calibrationParameters.put("optimizerFactory", optimizerFactory);
 				properties.put("calibrationParameters", calibrationParameters);
 
-				System.out.println("Number of volatility parameters: " + volatilityModel.getParameter().length);
+//				System.out.println("Number of volatility parameters: " + volatilityModel.getParameter().length);
 				//System.out.println("Number of correlation parameters: " + correlationModel.getParameter().length);
 				System.out.println("Number of scaling parameters: " + tenorTimeScalingModel.getParameter().length);
 
 				System.out.println("Number of covariance parameters: " + termStructureCovarianceModel.getParameter().length);
 				
-				System.out.println("Number of scalingAndVol parameters: " + scalingAndVol.length);
+//				System.out.println("Number of scalingAndVol parameters: " + scalingAndVol.length);
 
 				/*
 				 * Create corresponding LIBOR Market Model
@@ -377,6 +386,8 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 				final TermStructureModel liborMarketModelCalibrated = new LIBORMarketModelWithTenorRefinement(
 						new TimeDiscretization[] { liborPeriodDiscretizationDaily, liborPeriodDiscretizationWeekly, liborPeriodDiscretizationMonthly,liborPeriodDiscretizationQuarterly,liborPeriodDiscretizationSemiannual},
 						new Integer[] { 5, 4, 3, 2, 200 },
+//						new TimeDiscretization[] { liborPeriodDiscretizationMonthly,liborPeriodDiscretizationSemiannual},
+//						new Integer[] { 2, 200 },
 						curveModel,
 						forwardCurve,
 						new DiscountCurveFromForwardCurve(forwardCurve),
@@ -420,7 +431,7 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 
 		Assert.assertTrue(Math.abs(averageDeviation) < 1E-2);
 		
-		// CAPLET ON BACKWARD LOOKING RATE SEMESTRALI
+//		// CAPLET ON BACKWARD LOOKING RATE SEMESTRALI
 		DecimalFormat formatterTimeValue = new DecimalFormat("##0.00;");
 		DecimalFormat formatterVolValue = new DecimalFormat("##0.00000;");
 		DecimalFormat formatterAnalytic = new DecimalFormat("##0.000;");
@@ -440,13 +451,13 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			Caplet capletCassical = new Caplet(beginLiborTime, dtLibor, strike, dtLibor, false, ValueUnit.NORMALVOLATILITY);
 			double capletMaturity = beginLiborTime+dtLibor;
 			double impliedVolBackward = capletCassical.getValue(simulationCalibrated);
-			double analyticFormulaPaper = Math.sqrt(1+0.5/(capletMaturity*3));
+			double analyticFormulaPaper = Math.sqrt(1+0.5/(beginLiborTime*3));
 			if (beginLiborTime<2.5) {		//da i valori del caplet per maturity 1.5Y, 2Y, 2.5Y,.	
 				if (mktData[mktDataIndex] == 0.0) {
 				System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
 						+ formatterTimeValue.format(capletMaturity) + "; "
-						+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: "
-						+ formatterPercentage.format(impliedVolBackward)+ "  Analytic result: " 
+						+ formatterTimeValue.format(capletMaturity) + ")." + "\t" + "Backward caplet: "
+						+ formatterPercentage.format(impliedVolBackward)+ "\t" + "Analytic ratio: " 
 						+ formatterAnalytic.format(analyticFormulaPaper) );
 				beginLiborTime+=0.5;
 				mktDataIndex+=1;
@@ -456,12 +467,12 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 					double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
 					System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
 							+ formatterTimeValue.format(capletMaturity) + "; "
-							+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: "
-							+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
+							+ formatterTimeValue.format(capletMaturity) + ")." + "\t" + "Backward caplet: "
+							+ formatterPercentage.format(impliedVolBackward)+ "\t" + "Analytic ratio: " 
 							+ formatterAnalytic.format(analyticFormulaPaper) 
-							+ "  Mkt vol. " + mktData[mktDataIndex]
-							+ "  Ratio Mkt: "	+ formatterAnalytic.format(ratioMktVol)	
-							+ "  Error Mkt: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+							+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
+							+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
+							+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
 							);
 					beginLiborTime+=0.5;
 					mktDataIndex+=1;
@@ -473,8 +484,8 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 				if (mktData[mktDataIndex] == 0.0) {
 					System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
 							+ formatterTimeValue.format(capletMaturity) + "; "
-							+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: " 
-							+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
+							+ formatterTimeValue.format(capletMaturity) + ")." + "\t" + "Backward caplet: "
+							+ formatterPercentage.format(impliedVolBackward)+ "\t" + "Analytic ratio: " 
 							+ formatterAnalytic.format(analyticFormulaPaper) );
 					beginLiborTime+=1;
 					mktDataIndex+=1;
@@ -483,12 +494,12 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 						double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
 						System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
 								+ formatterTimeValue.format(capletMaturity) + "; "
-								+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: " 
-								+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
-								+ formatterAnalytic.format(analyticFormulaPaper)  
-								+ "  Mkt vol. " + mktData[mktDataIndex]
-								+ "  Ratio Mkt: "	+ formatterAnalytic.format(ratioMktVol)	
-								+ "  Error Mkt: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+								+ formatterTimeValue.format(capletMaturity) + ")." + "\t" + "Backward caplet: "
+								+ formatterPercentage.format(impliedVolBackward)+ "\t" + "Analytic ratio: " 
+								+ formatterAnalytic.format(analyticFormulaPaper) 
+								+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
+								+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
+								+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
 								);
 						beginLiborTime+=1;
 						mktDataIndex+=1;
@@ -496,14 +507,14 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			}
 		}
 		
-		//  Backward looking rate values
 		System.out.println("\n Backward looking rate:");
-		for( beginLiborTime=0.0; beginLiborTime<liborPeriodDiscretization.getTime(liborPeriodDiscretization.getNumberOfTimes()-1); beginLiborTime+=1) {
+		for(beginLiborTime=0.0; beginLiborTime<liborPeriodDiscretization.getTime(liborPeriodDiscretization.getNumberOfTimes()-1); beginLiborTime+=1) {
 			double endLiborTime=beginLiborTime+dtLibor;
 			RandomVariable backwardLookingRate =  simulationCalibrated.getLIBOR(beginLiborTime, beginLiborTime,endLiborTime);
 			double avgBackwardLookingRate =backwardLookingRate.getAverage();
-			System.out.println("Backward B(" + formatterTimeValue.format(beginLiborTime) +  ", " + formatterTimeValue.format(endLiborTime) + ") evaluated in t= " + formatterTimeValue.format(endLiborTime) + ", avg. value " + formatterVolValue.format(avgBackwardLookingRate));
+			System.out.println("Backward B(" + formatterTimeValue.format(beginLiborTime) +  ", " + formatterTimeValue.format(endLiborTime) + "; "  + formatterTimeValue.format(beginLiborTime)+ "."+ "\t" + "Average: " + avgBackwardLookingRate);
 		}
+		
 		
 		
 		
