@@ -325,15 +325,6 @@ public class LIBORMarketModelTimeHomogeneousJUNITCalibrationTest {
 				final EulerSchemeFromProcessModel process = new EulerSchemeFromProcessModel(liborMarketModelCalibrated, brownianMotion);
 				simulationCalibrated = new LIBORMonteCarloSimulationFromTermStructureModel(process);
 			}
-		
-			DecimalFormat formatterTimeValue = new DecimalFormat("##0.00;");
-			DecimalFormat formatterVolValue = new DecimalFormat("##0.00000;");
-			System.out.println("\n Backward looking rate:");
-			RandomVariable backwardLookingRate =  simulationCalibrated.getLIBOR(0.5, 0.5,1.0);
-			double avgBackwardLookingRate =backwardLookingRate.getAverage();
-			System.out.println("Backward " + avgBackwardLookingRate);
-
-
 	
 			
 		System.out.println("\nValuation on calibrated model:");
@@ -356,14 +347,96 @@ public class LIBORMarketModelTimeHomogeneousJUNITCalibrationTest {
 		final double averageDeviation = deviationSum/calibrationProducts.size();
 		System.out.println("Mean Deviation:" + formatterValue.format(averageDeviation));
 		System.out.println("RMS Error.....:" + formatterValue.format(Math.sqrt(deviationSquaredSum/calibrationProducts.size())));
-		System.out.println("__________________________________________________________________________________________\n");
-
-		
-
-		
+		System.out.println("__________________________________________________________________________________________\n");	
 			
 		Assert.assertTrue(Math.abs(averageDeviation) < 1E-2);
+		// CAPLET ON BACKWARD LOOKING RATE SEMESTRALI
+	
+		DecimalFormat formatterAnalytic = new DecimalFormat("##0.000;");
+		DecimalFormat formatterPercentage = new DecimalFormat(" ##0.000%;-##0.000%", new DecimalFormatSymbols(Locale.ENGLISH));
+		DecimalFormat formatterTimeValue = new DecimalFormat("##0.00;");
+		DecimalFormat formatterVolValue = new DecimalFormat("##0.00000;");
 
+		double strike = 0.004783;
+		double dtLibor = 0.5;
+		
+		double[] mktData = new double[] {/* 6M 0.00167, */ /* 12M*/ 0.00201, /* 18M*/ 0.00228, /* 2Y */ 0.00264, 0.0, /* 3Y */ 0.0033, /* 4Y */0.00406, /* 5Y */ 0.00455, /* 6Y - NA */ 0.0, /* 7Y */0.00513, /* 8Y- NA */0.0, /* 9Y */0.0, /* 10Y */0.00550,0.0,0.0,0.0,0.0, /* 15Y */0.00544,0.0,0.0,0.0,0.0, /* 20Y */0.0053,0.0,0.0,0.0};
+	
+		int mktDataIndex = 0;
+
+		//Results with CALIBRATED model
+		System.out.println("\n results on CALIBRATED model \n");
+		double beginLiborTime = 0.5;
+		while(beginLiborTime < liborPeriodDiscretization.getTime(liborPeriodDiscretization.getNumberOfTimes()-1)) {
+			Caplet capletCassical = new Caplet(beginLiborTime, dtLibor, strike, dtLibor, false, ValueUnit.NORMALVOLATILITY);
+			double capletMaturity = beginLiborTime+dtLibor;
+			double impliedVolBackward = capletCassical.getValue(simulationCalibrated);
+			double analyticFormulaPaper = Math.sqrt(1+0.5/(capletMaturity*3));
+			if (beginLiborTime<2.5) {		//da i valori del caplet per maturity 1.5Y, 2Y, 2.5Y,.	
+				if (mktData[mktDataIndex] == 0.0) {
+				System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
+						+ formatterTimeValue.format(capletMaturity) + "; "
+						+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: "
+						+ formatterPercentage.format(impliedVolBackward)+ "  Analytic result: " 
+						+ formatterAnalytic.format(analyticFormulaPaper) );
+				beginLiborTime+=0.5;
+				mktDataIndex+=1;
+				}
+				else {
+
+					double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
+					System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
+							+ formatterTimeValue.format(capletMaturity) + "; "
+							+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: "
+							+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
+							+ formatterAnalytic.format(analyticFormulaPaper) 
+							+ "  Mkt vol. " + mktData[mktDataIndex]
+							+ "  Ratio Mkt: "	+ formatterAnalytic.format(ratioMktVol)	
+							+ "  Error Mkt: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+							);
+					beginLiborTime+=0.5;
+					mktDataIndex+=1;
+				}
+				
+			}
+			else {	//secondo loop da i valori del caplet per maturity 4Y,5Y,...,21
+	
+				if (mktData[mktDataIndex] == 0.0) {
+					System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
+							+ formatterTimeValue.format(capletMaturity) + "; "
+							+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: " 
+							+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
+							+ formatterAnalytic.format(analyticFormulaPaper) );
+					beginLiborTime+=1;
+					mktDataIndex+=1;
+					}
+					else {
+						double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
+						System.out.println("Caplet on B(" + formatterTimeValue.format(beginLiborTime) + ", "
+								+ formatterTimeValue.format(capletMaturity) + "; "
+								+ "" + formatterTimeValue.format(capletMaturity) + "). Implied vol.: " 
+								+ formatterPercentage.format(impliedVolBackward) + "  Analytic result: " 
+								+ formatterAnalytic.format(analyticFormulaPaper)  
+								+ "  Mkt vol. " + mktData[mktDataIndex]
+								+ "  Ratio Mkt: "	+ formatterAnalytic.format(ratioMktVol)	
+								+ "  Error Mkt: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+								);
+						beginLiborTime+=1;
+						mktDataIndex+=1;
+					}
+			}
+		}
+		
+		//  Backward looking rate values
+		System.out.println("\n Backward looking rate:");
+		for( beginLiborTime=0.0; beginLiborTime<liborPeriodDiscretization.getTime(liborPeriodDiscretization.getNumberOfTimes()-1); beginLiborTime+=1) {
+			double endLiborTime=beginLiborTime+dtLibor;
+			RandomVariable backwardLookingRate =  simulationCalibrated.getLIBOR(beginLiborTime, beginLiborTime,endLiborTime);
+			double avgBackwardLookingRate =backwardLookingRate.getAverage();
+			System.out.println("Backward B(" + formatterTimeValue.format(beginLiborTime) +  ", " + formatterTimeValue.format(endLiborTime) + ") evaluated in t= " + formatterTimeValue.format(endLiborTime) + ", avg. value " + formatterVolValue.format(avgBackwardLookingRate));
+		}
+		
+		
 		
 	}
 
