@@ -5,6 +5,7 @@ import java.time.Month;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -55,6 +56,7 @@ import net.finmath.optimizer.SolverException;
 import net.finmath.plots.Named;
 import net.finmath.plots.Plot;
 import net.finmath.plots.Plot2D;
+import net.finmath.plots.PlotableFunction2D;
 import net.finmath.plots.Plots;
 import net.finmath.stochastic.RandomVariable;
 import net.finmath.time.Schedule;
@@ -174,10 +176,25 @@ public class PlotPaths {
 			return path;
 		};
 
-		final Plot plot = new Plot2D(0.0, 1.0, 1000, Arrays.asList(
-				new Named<DoubleUnaryOperator>("Maturity 1", function)));
+		final DoubleUnaryOperator function2 = (time) -> {
 
-		plot.setTitle("MC Simulation").setXAxisLabel("Time").setYAxisLabel("Value").setIsLegendVisible(true);
+
+			RandomVariable z = null;
+			try {
+				z = simulationMercurioModelNONcalibrated.getLIBOR(time,0.75,1.0);
+			} catch (CalculationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			double path = z.get(5);
+			return path;
+		};
+		
+		Plot plot = new Plot2D(List.of(new PlotableFunction2D(0.0, 1.0, 1000, function), new PlotableFunction2D(0.0, 1.0, 1000, function2)));
+		//final Plot plot = new Plot2D(0.0, 1.0, 1000, Arrays.asList(
+				//new Named<DoubleUnaryOperator>("Maturity 1", function)));
+
+		plot.setTitle("MC Simulation").setXAxisLabel("Time").setYAxisLabel("Rate's Value").setIsLegendVisible(true);
 		try {
 			plot.show();
 			Thread.sleep(20000);

@@ -142,7 +142,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 	@Test
 	public void testATMSwaptionCalibration() throws CalculationException, SolverException {
 
-		final int numberOfPaths		= 5000; // ideale è 10'000 paths!
+		final int numberOfPaths		= 50000; // ideale è 10'000 paths!
 		final int numberOfFactors	= 1;
 
 		final long millisCurvesStart = System.currentTimeMillis();
@@ -266,7 +266,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		 * Create a simulation time discretization
 		 */
 		// If simulation time is below libor time, exceptions will be hard to track.
-		final double lastTime	= 21.0;
+		final double lastTime	= 30.0;
 		final double dtLibor	= 0.5;
 		final double dt	= 0.125;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
@@ -281,8 +281,8 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		double[] arrayValues = new double [timeToMaturityDiscretization.getNumberOfTimes()];
 		for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.2/100;}
 
-		final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
-		//LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.005, 0.1, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
+		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
+		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, -0.001, 0.0005, 0.2, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization,optionMaturityDiscretization,timeToMaturityDiscretization, 0.50 / 100);
 		
 		final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecayWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
@@ -335,86 +335,86 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		for(int i=0; i<calibrationItemNames.size(); i++) {
 			calibrationItemsLMM[i] = new CalibrationProduct(calibrationProducts.get(i).getProduct(),calibrationProducts.get(i).getTargetValue(),calibrationProducts.get(i).getWeight());
 		}
-		final LIBORMarketModel mercurioModelCalibrated = LIBORMarketModelFromCovarianceModelWithMercurioModification.of(
-				liborPeriodDiscretization,
-				curveModel,
-				forwardCurve,
-				new DiscountCurveFromForwardCurve(forwardCurve),
-				randomVariableFactory,
-				covarianceModelReducedVolatility,
-				calibrationItemsLMM, properties);
-
-		final long millisCalibrationEnd = System.currentTimeMillis();
-		
-//-------------------------------------------------------------------------------- fine calibrazione volatility------------------------------
-		System.out.println("\nCalibrated parameters are:");
-		final double[] param = ((AbstractLIBORCovarianceModelParametric)((LIBORMarketModelFromCovarianceModelWithMercurioModification) mercurioModelCalibrated).getCovarianceModel()).getParameterAsDouble();
-		for (final double p : param) {
-			System.out.println(p);
-		}
-
-		final EulerSchemeFromProcessModel process = new EulerSchemeFromProcessModel(mercurioModelCalibrated, brownianMotion);
-		final LIBORModelMonteCarloSimulationModel simulationMercurioCalibrated = new LIBORMonteCarloSimulationFromLIBORModel(process);
-
-		System.out.println("\nValuation on calibrated model:");
-		double deviationSum			= 0.0;
-		double deviationSquaredSum	= 0.0;
-		for (int i = 0; i < calibrationProducts.size(); i++) {
-			final AbstractLIBORMonteCarloProduct calibrationProduct = calibrationProducts.get(i).getProduct();
-			try {
-				final double valueModel = calibrationProduct.getValue(simulationMercurioCalibrated);
-				final double valueTarget = calibrationProducts.get(i).getTargetValue().getAverage();
-				final double error = valueModel-valueTarget;
-				deviationSum += error;
-				deviationSquaredSum += error*error;
-				System.out.println(calibrationItemNames.get(i) + "\t" + "Model: " + formatterValue.format(valueModel) + "\t Target: " + formatterValue.format(valueTarget) + "\t Deviation: " + formatterDeviation.format(valueModel-valueTarget));// + "\t" + calibrationProduct.toString());
-			}
-			catch(final Exception e) {
-			}
-		}
-
-
-		/*
-		 * Checking serilization
-		 */
-		byte[] lmmSerialized = null;
-		try {
-			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			final ObjectOutputStream oos = new ObjectOutputStream( baos );
-			oos.writeObject(mercurioModelCalibrated.getCloneWithModifiedData(null));
-			lmmSerialized = baos.toByteArray();
-		} catch (final IOException e) {
-			fail("Serialization failed with exception " + e.getMessage());
-		}
-
-		LIBORMarketModelFromCovarianceModelWithMercurioModification liborMarketModelFromSerialization = null;
-		try {
-			final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(lmmSerialized) );
-			liborMarketModelFromSerialization = (LIBORMarketModelFromCovarianceModelWithMercurioModification)ois.readObject();
-		} catch (IOException | ClassNotFoundException e) {
-			fail("Deserialization failed with exception " + e.getMessage());
-		}
-
-		/*
-		 * Check if the deserialized model and the original calibrated model give the same valuations
-		 */
-		if(liborMarketModelFromSerialization != null) {
-			final LIBORModelMonteCarloSimulationModel simulationFromSerialization = new LIBORMonteCarloSimulationFromLIBORModel(new EulerSchemeFromProcessModel(liborMarketModelFromSerialization, brownianMotion));
-
-			System.out.println("\nValuation on calibrated model:");
-			for (int i = 0; i < calibrationProducts.size(); i++) {
-				final AbstractLIBORMonteCarloProduct calibrationProduct = calibrationProducts.get(i).getProduct();
-				try {
-					final double valueFromCalibratedModel = calibrationProduct.getValue(simulationMercurioCalibrated);
-					final double valueFromSerializedModel = calibrationProduct.getValue(simulationFromSerialization);
-					final double error = valueFromSerializedModel-valueFromCalibratedModel;
-					Assert.assertEquals("Valuation using deserilized model.", valueFromCalibratedModel, valueFromSerializedModel, 1E-12);
-					System.out.println(calibrationItemNames.get(i) + "\t" + formatterDeviation.format(error));
-				}
-				catch(final Exception e) {
-				}
-			}
-		}
+//		final LIBORMarketModel mercurioModelCalibrated = LIBORMarketModelFromCovarianceModelWithMercurioModification.of(
+//				liborPeriodDiscretization,
+//				curveModel,
+//				forwardCurve,
+//				new DiscountCurveFromForwardCurve(forwardCurve),
+//				randomVariableFactory,
+//				covarianceModelReducedVolatility,
+//				calibrationItemsLMM, properties);
+//
+//		final long millisCalibrationEnd = System.currentTimeMillis();
+//		
+////-------------------------------------------------------------------------------- fine calibrazione volatility------------------------------
+//		System.out.println("\nCalibrated parameters are:");
+//		final double[] param = ((AbstractLIBORCovarianceModelParametric)((LIBORMarketModelFromCovarianceModelWithMercurioModification) mercurioModelCalibrated).getCovarianceModel()).getParameterAsDouble();
+//		for (final double p : param) {
+//			System.out.println(p);
+//		}
+//
+//		final EulerSchemeFromProcessModel process = new EulerSchemeFromProcessModel(mercurioModelCalibrated, brownianMotion);
+//		final LIBORModelMonteCarloSimulationModel simulationMercurioCalibrated = new LIBORMonteCarloSimulationFromLIBORModel(process);
+//
+//		System.out.println("\nValuation on calibrated model:");
+//		double deviationSum			= 0.0;
+//		double deviationSquaredSum	= 0.0;
+//		for (int i = 0; i < calibrationProducts.size(); i++) {
+//			final AbstractLIBORMonteCarloProduct calibrationProduct = calibrationProducts.get(i).getProduct();
+//			try {
+//				final double valueModel = calibrationProduct.getValue(simulationMercurioCalibrated);
+//				final double valueTarget = calibrationProducts.get(i).getTargetValue().getAverage();
+//				final double error = valueModel-valueTarget;
+//				deviationSum += error;
+//				deviationSquaredSum += error*error;
+//				System.out.println(calibrationItemNames.get(i) + "\t" + "Model: " + formatterValue.format(valueModel) + "\t Target: " + formatterValue.format(valueTarget) + "\t Deviation: " + formatterDeviation.format(valueModel-valueTarget));// + "\t" + calibrationProduct.toString());
+//			}
+//			catch(final Exception e) {
+//			}
+//		}
+//
+//
+//		/*
+//		 * Checking serilization
+//		 */
+//		byte[] lmmSerialized = null;
+//		try {
+//			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//			final ObjectOutputStream oos = new ObjectOutputStream( baos );
+//			oos.writeObject(mercurioModelCalibrated.getCloneWithModifiedData(null));
+//			lmmSerialized = baos.toByteArray();
+//		} catch (final IOException e) {
+//			fail("Serialization failed with exception " + e.getMessage());
+//		}
+//
+//		LIBORMarketModelFromCovarianceModelWithMercurioModification liborMarketModelFromSerialization = null;
+//		try {
+//			final ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(lmmSerialized) );
+//			liborMarketModelFromSerialization = (LIBORMarketModelFromCovarianceModelWithMercurioModification)ois.readObject();
+//		} catch (IOException | ClassNotFoundException e) {
+//			fail("Deserialization failed with exception " + e.getMessage());
+//		}
+//
+//		/*
+//		 * Check if the deserialized model and the original calibrated model give the same valuations
+//		 */
+//		if(liborMarketModelFromSerialization != null) {
+//			final LIBORModelMonteCarloSimulationModel simulationFromSerialization = new LIBORMonteCarloSimulationFromLIBORModel(new EulerSchemeFromProcessModel(liborMarketModelFromSerialization, brownianMotion));
+//
+//			System.out.println("\nValuation on calibrated model:");
+//			for (int i = 0; i < calibrationProducts.size(); i++) {
+//				final AbstractLIBORMonteCarloProduct calibrationProduct = calibrationProducts.get(i).getProduct();
+//				try {
+//					final double valueFromCalibratedModel = calibrationProduct.getValue(simulationMercurioCalibrated);
+//					final double valueFromSerializedModel = calibrationProduct.getValue(simulationFromSerialization);
+//					final double error = valueFromSerializedModel-valueFromCalibratedModel;
+//					Assert.assertEquals("Valuation using deserilized model.", valueFromCalibratedModel, valueFromSerializedModel, 1E-12);
+//					System.out.println(calibrationItemNames.get(i) + "\t" + formatterDeviation.format(error));
+//				}
+//				catch(final Exception e) {
+//				}
+//			}
+//		}
 		
 		// CAPLET ON BACKWARD LOOKING RATE SEMESTRALI
 		DecimalFormat formatterTimeValue = new DecimalFormat("##0.00;");
@@ -428,84 +428,84 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		int liborIndex=1;
 		int mktDataIndex = 0;
 
-		//Results with CALIBRATED model
-		System.out.println("\n results on CALIBRATED model \n");
-		while(liborIndex < liborPeriodDiscretization.getNumberOfTimes()) {
-			double maturityMinusLengthLibor =liborPeriodDiscretization.getTime(liborIndex);
-			double fixBackwardTime=liborPeriodDiscretization.getTime(liborIndex+1);
-			Caplet capletCassical = new Caplet(maturityMinusLengthLibor, dtLibor, strike, dtLibor, false, ValueUnit.NORMALVOLATILITY);
-			//set to default ValueUnit.NORMALVOLATILITY for CapletOnBackwardLookingRate
-			CapletOnBackwardLookingRate capletBackward = new CapletOnBackwardLookingRate(maturityMinusLengthLibor, dtLibor, strike, dtLibor, false);			
-			double impliedVolClassical = capletCassical.getValue(simulationMercurioCalibrated);
-			double impliedVolBackward = capletBackward.getValue(simulationMercurioCalibrated);
-			double analyticFormulaPaper = Math.sqrt(1+0.5/(maturityMinusLengthLibor*3));
-			double ratioImpliedVol = impliedVolBackward/impliedVolClassical;
-			if (liborIndex<5) {		//da i valori del caplet per maturity 1.5Y, 2Y, 2.5Y,.
-				if (mktData[mktDataIndex] == 0.0) {
-					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
-							+ formatterTimeValue.format(fixBackwardTime) + "; "
-							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
-							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
-							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
-							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
-							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
-						+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) );
-				liborIndex+=1;
-				mktDataIndex+=1;
-				}
-				else {
-					double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
-					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
-							+ formatterTimeValue.format(fixBackwardTime) + "; "
-							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
-							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
-							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
-							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
-							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
-							+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) 
-							+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
-							+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
-							+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
-							);
-							
-					liborIndex+=1;
-					mktDataIndex+=1;
-				}
-				
-			}
-			else {	//secondo loop da i valori del caplet per maturity 4Y,5Y,...,21
-				if (mktData[mktDataIndex] == 0.0) {
-					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
-							+ formatterTimeValue.format(fixBackwardTime) + "; "
-							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
-							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
-							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
-							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
-							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
-						+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) );
-					liborIndex+=2;
-					mktDataIndex+=1;
-					}
-					else {
-						double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
-						System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
-								+ formatterTimeValue.format(fixBackwardTime) + "; "
-								+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
-								+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
-								+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
-								+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
-								+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
-								+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) 
-								+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
-								+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
-								+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
-								);
-						liborIndex+=2;
-						mktDataIndex+=1;
-					}
-					
-			}
-		}
+//		//Results with CALIBRATED model
+//		System.out.println("\n results on CALIBRATED model \n");
+//		while(liborIndex < liborPeriodDiscretization.getNumberOfTimes()) {
+//			double maturityMinusLengthLibor =liborPeriodDiscretization.getTime(liborIndex);
+//			double fixBackwardTime=liborPeriodDiscretization.getTime(liborIndex+1);
+//			Caplet capletCassical = new Caplet(maturityMinusLengthLibor, dtLibor, strike, dtLibor, false, ValueUnit.NORMALVOLATILITY);
+//			//set to default ValueUnit.NORMALVOLATILITY for CapletOnBackwardLookingRate
+//			CapletOnBackwardLookingRate capletBackward = new CapletOnBackwardLookingRate(maturityMinusLengthLibor, dtLibor, strike, dtLibor, false);			
+//			double impliedVolClassical = capletCassical.getValue(simulationMercurioCalibrated);
+//			double impliedVolBackward = capletBackward.getValue(simulationMercurioCalibrated);
+//			double analyticFormulaPaper = Math.sqrt(1+0.5/(maturityMinusLengthLibor*3));
+//			double ratioImpliedVol = impliedVolBackward/impliedVolClassical;
+//			if (liborIndex<5) {		//da i valori del caplet per maturity 1.5Y, 2Y, 2.5Y,.
+//				if (mktData[mktDataIndex] == 0.0) {
+//					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
+//							+ formatterTimeValue.format(fixBackwardTime) + "; "
+//							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
+//							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
+//							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
+//							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
+//							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
+//						+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) );
+//				liborIndex+=1;
+//				mktDataIndex+=1;
+//				}
+//				else {
+//					double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
+//					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
+//							+ formatterTimeValue.format(fixBackwardTime) + "; "
+//							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
+//							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
+//							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
+//							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
+//							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
+//							+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) 
+//							+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
+//							+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
+//							+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+//							);
+//							
+//					liborIndex+=1;
+//					mktDataIndex+=1;
+//				}
+//				
+//			}
+//			else {	//secondo loop da i valori del caplet per maturity 4Y,5Y,...,21
+//				if (mktData[mktDataIndex] == 0.0) {
+//					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
+//							+ formatterTimeValue.format(fixBackwardTime) + "; "
+//							+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
+//							+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
+//							+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
+//							+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
+//							+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
+//						+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) );
+//					liborIndex+=2;
+//					mktDataIndex+=1;
+//					}
+//					else {
+//						double ratioMktVol =impliedVolBackward/mktData[mktDataIndex];
+//						System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
+//								+ formatterTimeValue.format(fixBackwardTime) + "; "
+//								+ "" + formatterTimeValue.format(fixBackwardTime) + ") " + "\t" + "Backward Caplet: " 
+//								+ formatterPercentage.format(impliedVolBackward) + "\t" + "Classical Caplet: " 
+//								+ formatterPercentage.format(impliedVolClassical)+  "\t" +"Analytic ratio: " 
+//								+ formatterAnalytic.format(analyticFormulaPaper)+  "\t" + "MC ratio: "
+//								+ formatterAnalytic.format(ratioImpliedVol) +  "\t" +"Error: "
+//								+ formatterPercentage.format((ratioImpliedVol-analyticFormulaPaper)/ratioImpliedVol) 
+//								+  "\t" +"Market Caplet Vol. " + formatterPercentage.format(mktData[mktDataIndex])
+//								+  "\t" +"Market Ratio: "	+ formatterAnalytic.format(ratioMktVol)	
+//								+  "\t" +"Market Error: "	+ formatterPercentage.format((ratioMktVol-analyticFormulaPaper)/ratioMktVol)
+//								);
+//						liborIndex+=2;
+//						mktDataIndex+=1;
+//					}
+//					
+//			}
+//		}
 
 
 		// Set model properties
@@ -610,30 +610,30 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 
 		
 		
-		int timeIndex =  4;
-		System.out.println(" \n Backward looking rate evaluated at the END of the accrual period:");
-		for( liborIndex=0; liborIndex<liborPeriodDiscretization.getNumberOfTimes()-1; liborIndex++) {
-			double evaluationTime=timeDiscretizationFromArray.getTime(timeIndex);
-			double liborStartingTime=liborPeriodDiscretization.getTime(liborIndex);
-			double liborEndingTime=liborPeriodDiscretization.getTime(liborIndex+1);
-			RandomVariable backwardLookingRate =  simulationMercurioCalibrated.getLIBOR(timeIndex, liborIndex);
-			double avgBackwardLookingRate =backwardLookingRate.getAverage();
-			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + "."+ "\t" + "Average: " + avgBackwardLookingRate);
-			timeIndex +=  4;
-		}	
-		
-		int timeIndex2 =  0;
-		System.out.println("\n Backward looking rate evaluated at the BEGIN of the accrual period:");
-		for( liborIndex=0; liborIndex<liborPeriodDiscretization.getNumberOfTimes()-1; liborIndex++) {
-			double evaluationTime=timeDiscretizationFromArray.getTime(timeIndex2);
-			double liborStartingTime=liborPeriodDiscretization.getTime(liborIndex);
-			double liborEndingTime=liborPeriodDiscretization.getTime(liborIndex+1);
-			RandomVariable backwardLookingRate =  simulationMercurioCalibrated.getLIBOR(timeIndex2, liborIndex);
-			double avgBackwardLookingRate =backwardLookingRate.getAverage();
-			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + "."+ "\t" + "Average: " + avgBackwardLookingRate);
-			timeIndex2 +=  4;
-		}
-		
+//		int timeIndex =  4;
+//		System.out.println(" \n Backward looking rate evaluated at the END of the accrual period:");
+//		for( liborIndex=0; liborIndex<liborPeriodDiscretization.getNumberOfTimes()-1; liborIndex++) {
+//			double evaluationTime=timeDiscretizationFromArray.getTime(timeIndex);
+//			double liborStartingTime=liborPeriodDiscretization.getTime(liborIndex);
+//			double liborEndingTime=liborPeriodDiscretization.getTime(liborIndex+1);
+//			RandomVariable backwardLookingRate =  simulationMercurioCalibrated.getLIBOR(timeIndex, liborIndex);
+//			double avgBackwardLookingRate =backwardLookingRate.getAverage();
+//			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + "."+ "\t" + "Average: " + avgBackwardLookingRate);
+//			timeIndex +=  4;
+//		}	
+//		
+//		int timeIndex2 =  0;
+//		System.out.println("\n Backward looking rate evaluated at the BEGIN of the accrual period:");
+//		for( liborIndex=0; liborIndex<liborPeriodDiscretization.getNumberOfTimes()-1; liborIndex++) {
+//			double evaluationTime=timeDiscretizationFromArray.getTime(timeIndex2);
+//			double liborStartingTime=liborPeriodDiscretization.getTime(liborIndex);
+//			double liborEndingTime=liborPeriodDiscretization.getTime(liborIndex+1);
+//			RandomVariable backwardLookingRate =  simulationMercurioCalibrated.getLIBOR(timeIndex2, liborIndex);
+//			double avgBackwardLookingRate =backwardLookingRate.getAverage();
+//			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + "."+ "\t" + "Average: " + avgBackwardLookingRate);
+//			timeIndex2 +=  4;
+//		}
+//		
 		
 	//CORRETTO, CALIBRA LA IR CURVE E BASTA, L(0) è CORRETTO!	
 //		timeIndex2 =  0;
@@ -647,17 +647,17 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 //			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + ", avg. value " + avgBackwardLookingRate);
 //			timeIndex2 +=  2;
 //		}
-		
-		
-		System.out.println("Time required for calibration of curves.........: " + (millisCurvesEnd-millisCurvesStart)/1000.0 + " s.");
-		System.out.println("Time required for calibration of volatilities...: " + (millisCalibrationEnd-millisCalibrationStart)/1000.0 + " s.");
-
-		final double averageDeviation = deviationSum/calibrationProducts.size();
-		System.out.println("Mean Deviation:" + formatterValue.format(averageDeviation));
-		System.out.println("RMS Error.....:" + formatterValue.format(Math.sqrt(deviationSquaredSum/calibrationProducts.size())));
-		System.out.println("__________________________________________________________________________________________\n");
-
-		Assert.assertTrue(Math.abs(averageDeviation) < 2E-4);
+//		
+//		
+//		System.out.println("Time required for calibration of curves.........: " + (millisCurvesEnd-millisCurvesStart)/1000.0 + " s.");
+//		System.out.println("Time required for calibration of volatilities...: " + (millisCalibrationEnd-millisCalibrationStart)/1000.0 + " s.");
+//
+//		final double averageDeviation = deviationSum/calibrationProducts.size();
+//		System.out.println("Mean Deviation:" + formatterValue.format(averageDeviation));
+//		System.out.println("RMS Error.....:" + formatterValue.format(Math.sqrt(deviationSquaredSum/calibrationProducts.size())));
+//		System.out.println("__________________________________________________________________________________________\n");
+//
+//		Assert.assertTrue(Math.abs(averageDeviation) < 2E-4);
 	}
 
 	
