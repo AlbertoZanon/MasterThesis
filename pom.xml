@@ -17,7 +17,7 @@
 		<dependency>
 			<groupId>net.finmath</groupId>
 			<artifactId>finmath-lib</artifactId>
-			<version>5.0.4</version>
+			<version>5.0.6-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.finmath</groupId>

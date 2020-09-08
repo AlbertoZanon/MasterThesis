@@ -304,6 +304,7 @@ public class LIBORMarketModelTimeHomogeneousJUNITCalibrationTest {
 				final TimeDiscretization liborPeriodDiscretizationQuarterly = new TimeDiscretizationFromArray(0.0, 3.0, 0.25, ShortPeriodLocation.SHORT_PERIOD_AT_START);
 				final TimeDiscretization liborPeriodDiscretizationSemiannual = new TimeDiscretizationFromArray(0.0, 3.0, 0.5, ShortPeriodLocation.SHORT_PERIOD_AT_START);
 
+
 				final TermStructureModel liborMarketModelCalibrated = new LIBORMarketModelWithTenorRefinement(
 						new TimeDiscretization[] { liborPeriodDiscretizationQuarterly,liborPeriodDiscretizationSemiannual},
 						new Integer[] { 2, 200 },
