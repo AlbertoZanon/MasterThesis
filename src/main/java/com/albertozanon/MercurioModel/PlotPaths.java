@@ -122,8 +122,8 @@ public class PlotPaths {
 		final ForwardCurve forwardCurve = curveModel.getForwardCurve("ForwardCurveFromDiscountCurve(discountCurve-EUR,1D)");
 		final DiscountCurve discountCurve = curveModel.getDiscountCurve("discountCurve-EUR");
 		//		curveModel.addCurve(discountCurve.getName(), discountCurve);
-		final double lastTime	= 5.0;
-		final double dtLibor	= 0.5;
+		final double lastTime	= 1.0;
+		final double dtLibor	= 0.2;
 		final double dt	= 0.001;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
 		final TimeDiscretization liborPeriodDiscretization = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dtLibor), dtLibor);
@@ -165,21 +165,23 @@ public class PlotPaths {
 
 			RandomVariable z = null;
 			try {
-				z = simulationMercurioModelNONcalibrated.getLIBOR(time,4.0,4.5);
+				z = simulationMercurioModelNONcalibrated.getLIBOR(time,0.75,1.0);
 			} catch (CalculationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			double path = z.get(0);
+			double path = z.get(7);
 			return path;
 		};
 
-		final Plot plot = new Plot2D(0.0, 5.0, 10000, Arrays.asList(
+		final Plot plot = new Plot2D(0.0, 1.0, 1000, Arrays.asList(
 				new Named<DoubleUnaryOperator>("Maturity 1", function)));
 
-		plot.setTitle("MC sim").setXAxisLabel("Time").setYAxisLabel("Value").setIsLegendVisible(true);
+		plot.setTitle("MC Simulation").setXAxisLabel("Time").setYAxisLabel("Value").setIsLegendVisible(true);
 		try {
 			plot.show();
+			Thread.sleep(20000);
+
 		} catch (final Exception e) {
 		}
 	}
