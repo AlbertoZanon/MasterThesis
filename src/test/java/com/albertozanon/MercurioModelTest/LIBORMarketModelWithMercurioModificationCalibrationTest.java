@@ -794,13 +794,13 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		}
 		final double rms = Math.sqrt(squaredErrorSum/calibrationProducts.size());
 
-//		System.out.println("Independent checked acccurary: " + rms);
-//
-//		System.out.println("Calibrated discount curve: ");
-//		for(int i=0; i<curveMaturities.length; i++) {
-//			final double maturity = curveMaturities[i];
-//			System.out.println(maturity + "\t" + calibratedModel.getDiscountCurve(discountCurveInterpolation.getName()).getDiscountFactor(maturity));
-//		}
+		System.out.println("Independent checked acccurary: " + rms);
+
+		System.out.println("Calibrated discount curve: ");
+		for(int i=0; i<curveMaturities.length; i++) {
+			final double maturity = curveMaturities[i];
+			System.out.println(maturity + "\t" + calibratedModel.getDiscountCurve(discountCurveInterpolation.getName()).getDiscountFactor(maturity)+ "\t" + forwardCurve.getForward(model, maturity, 0.5));
+		}
 		return model;
 	} 
 
