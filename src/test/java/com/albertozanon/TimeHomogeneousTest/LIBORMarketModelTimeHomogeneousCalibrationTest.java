@@ -256,9 +256,9 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			if(exercise < 0.25) {
 				continue;
 			}
-			if(exercise < 1.0) {
-				continue;
-			}
+//			if(exercise < 1.0) {
+//				continue;
+//			}
 
 			final int		numberOfPeriods     = (int) Math.round(tenor / swapPeriodLength);
 			final double	moneyness			= 0.0;
@@ -291,7 +291,7 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 //			final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstant(timeDiscretizationFromArray, liborPeriodDiscretization, optionMaturityDiscretization, timeToMaturityDiscretization, 0.40 / 100, true);
 		
 		// If simulation time is below libor time, exceptions will be hard to track.
-			final double lastTime	= 20.0;
+			final double lastTime	= 21.0;
 			final double dt		= 0.005;
 			//final double dt		= 0.003;
 			final TimeDiscretizationFromArray timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
@@ -300,7 +300,7 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, 31415 /* seed */);
 	
 			LIBORModelMonteCarloSimulationModel simulationCalibrated = null;
-			TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00,  7.00,  10.0, 15.0, 21.0);		// needed if you use LIBORVolatilityModelPiecewiseConstantWithMercurioModification: TimeDiscretization  = new TimeDiscretizationFromArray(0.0, 0.25, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0);
+			TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00, 7.00, 10.0, 15.0, 21.0);		// needed if you use LIBORVolatilityModelPiecewiseConstantWithMercurioModification: TimeDiscretization  = new TimeDiscretizationFromArray(0.0, 0.25, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0);
 
 			//TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00,	1,0, 2.00, 3.00, 20.0);
 			double[] arrayValues = new double [timeToMaturityDiscretization.getNumberOfTimes()];
@@ -308,9 +308,9 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 
 		
 			
-			//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstant(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
+			final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstant(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
 			//final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecay(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
-			LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialForm(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.0005, 0.1, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
+		//	LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialForm(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.005, 0.2, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
 
 			final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecay(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
 
@@ -318,9 +318,9 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 			AbstractLIBORCovarianceModelParametric	covarianceModelParametric = new LIBORCovarianceModelFromVolatilityAndCorrelation(timeDiscretizationFromArray, liborPeriodDiscretization, volatilityModel, correlationModel);
 
 //			final AbstractLIBORCovarianceModelParametric covarianceModelBlended = new BlendedLocalVolatilityModel(covarianceModelParametric, 0.0, false);
-			final AbstractLIBORCovarianceModelParametric covarianceModelDisplaced = new DisplacedLocalVolatilityModel(covarianceModelParametric, 1.0/0.25, false /* isCalibrateable */);
+			//final AbstractLIBORCovarianceModelParametric covarianceModelDisplaced = new DisplacedLocalVolatilityModel(covarianceModelParametric, 1.0/0.25, false /* isCalibrateable */);
 
-			final TimeDiscretization tenorTimeScalingDiscretization = new TimeDiscretizationFromArray(0.0, 20.0, 0.5, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+			final TimeDiscretization tenorTimeScalingDiscretization = new TimeDiscretizationFromArray(0.0, 21.0, 0.25, ShortPeriodLocation.SHORT_PERIOD_AT_START);
 			final double[] tenorTimeScalings = new double[tenorTimeScalingDiscretization.getNumberOfTimes()];
 			Arrays.fill(tenorTimeScalings, 0.0);
 			final TermStructureTenorTimeScalingInterface tenorTimeScalingModel = new TermStructureTenorTimeScalingPicewiseConstant(tenorTimeScalingDiscretization, tenorTimeScalings);
@@ -377,11 +377,11 @@ public class LIBORMarketModelTimeHomogeneousCalibrationTest {
 				 * Create corresponding LIBOR Market Model
 				 * 7 days + 3 weeks + 2 month, 1 quarter + 39 semi-annuals
 				 */
-				final TimeDiscretization liborPeriodDiscretizationDaily = new TimeDiscretizationFromArray(0.0, 20.0, 0.005, ShortPeriodLocation.SHORT_PERIOD_AT_START);
-				final TimeDiscretization liborPeriodDiscretizationWeekly = new TimeDiscretizationFromArray(0.0, 20.0, 0.025, ShortPeriodLocation.SHORT_PERIOD_AT_START);
-				final TimeDiscretization liborPeriodDiscretizationMonthly = new TimeDiscretizationFromArray(0.0, 20.0, 0.125, ShortPeriodLocation.SHORT_PERIOD_AT_START);
-				final TimeDiscretization liborPeriodDiscretizationQuarterly = new TimeDiscretizationFromArray(0.0, 20.0, 0.25, ShortPeriodLocation.SHORT_PERIOD_AT_START);
-				final TimeDiscretization liborPeriodDiscretizationSemiannual = new TimeDiscretizationFromArray(0.0, 20.0, 0.5, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+				final TimeDiscretization liborPeriodDiscretizationDaily = new TimeDiscretizationFromArray(0.0, 21.0, 0.005, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+				final TimeDiscretization liborPeriodDiscretizationWeekly = new TimeDiscretizationFromArray(0.0, 21.0, 0.025, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+				final TimeDiscretization liborPeriodDiscretizationMonthly = new TimeDiscretizationFromArray(0.0, 21.0, 0.125, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+				final TimeDiscretization liborPeriodDiscretizationQuarterly = new TimeDiscretizationFromArray(0.0, 21.0, 0.25, ShortPeriodLocation.SHORT_PERIOD_AT_START);
+				final TimeDiscretization liborPeriodDiscretizationSemiannual = new TimeDiscretizationFromArray(0.0, 21.0, 0.5, ShortPeriodLocation.SHORT_PERIOD_AT_START);
 
 				final TermStructureModel liborMarketModelCalibrated = new LIBORMarketModelWithTenorRefinement(
 						new TimeDiscretization[] { liborPeriodDiscretizationDaily, liborPeriodDiscretizationWeekly, liborPeriodDiscretizationMonthly,liborPeriodDiscretizationQuarterly,liborPeriodDiscretizationSemiannual},

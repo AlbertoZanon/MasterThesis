@@ -3,7 +3,7 @@
  *
  * Created on 16.01.2015
  */
-package com.albertozanon.TimeHomogeneousTest;
+package com.albertozanon.MercurioModelTest;
 
 import static org.junit.Assert.fail;
 
@@ -56,33 +56,37 @@ import net.finmath.marketdata.products.Swap;
 import net.finmath.montecarlo.BrownianMotion;
 import net.finmath.montecarlo.RandomVariableFactory;
 import net.finmath.montecarlo.RandomVariableFromArrayFactory;
+import net.finmath.montecarlo.interestrate.CalibrationProduct;
+import net.finmath.montecarlo.interestrate.LIBORMarketModel;
+import net.finmath.montecarlo.interestrate.LIBORModelMonteCarloSimulationModel;
+import net.finmath.montecarlo.interestrate.LIBORMonteCarloSimulationFromLIBORModel;
 import net.finmath.montecarlo.interestrate.models.HullWhiteModel;
 import net.finmath.montecarlo.interestrate.models.LIBORMarketModelFromCovarianceModel;
-import net.finmath.montecarlo.interestrate.models.LIBORMarketModelFromCovarianceModelWithMercurioModification;
+import com.albertozanon.MercurioModel.LIBORMarketModelFromCovarianceModelWithMercurioModification;
 import net.finmath.montecarlo.interestrate.models.LIBORMarketModelWithTenorRefinement;
 import net.finmath.montecarlo.interestrate.models.covariance.AbstractLIBORCovarianceModelParametric;
 import net.finmath.montecarlo.interestrate.models.covariance.BlendedLocalVolatilityModel;
 import net.finmath.montecarlo.interestrate.models.covariance.DisplacedLocalVolatilityModel;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCorrelationModel;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCorrelationModelExponentialDecay;
-import net.finmath.montecarlo.interestrate.models.covariance.LIBORCorrelationModelExponentialDecayWithMercurioModification;
+import com.albertozanon.MercurioModel.LIBORCorrelationModelExponentialDecayWithMercurioModification;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModelExponentialForm5Param;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModelFromVolatilityAndCorrelation;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModel;
-import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification;
+import com.albertozanon.MercurioModel.LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelPiecewiseConstant;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelTimeHomogenousPiecewiseConstant;
-import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification;
+import com.albertozanon.MercurioModel.LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification;
 import net.finmath.montecarlo.interestrate.models.covariance.ShortRateVolatilityModel;
 import net.finmath.montecarlo.interestrate.models.covariance.ShortRateVolatilityModelAsGiven;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructCovarianceModelFromLIBORCovarianceModelParametric;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureCovarianceModelParametric;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureTenorTimeScalingInterface;
 import net.finmath.montecarlo.interestrate.models.covariance.TermStructureTenorTimeScalingPicewiseConstant;
-import net.finmath.montecarlo.interestrate.models.covariance.VolatilityReductionMercurioModel;
+import com.albertozanon.MercurioModel.VolatilityReductionMercurioModel;
 import net.finmath.montecarlo.interestrate.products.AbstractLIBORMonteCarloProduct;
 import net.finmath.montecarlo.interestrate.products.Caplet;
-import net.finmath.montecarlo.interestrate.products.CapletOnBackwardLookingRate;
+import com.albertozanon.MercurioModel.CapletOnBackwardLookingRate;
 import net.finmath.montecarlo.interestrate.products.SwaptionSimple;
 import net.finmath.montecarlo.interestrate.products.Caplet.ValueUnit;
 import net.finmath.montecarlo.process.EulerSchemeFromProcessModel;
@@ -105,7 +109,7 @@ import net.finmath.time.daycount.DayCountConvention_ACT_365;
  *
  * @author Christian Fries
  */
-public class TestCaplet {
+public class CalibrationBackwardCaplet {
 
 	private final int numberOfPaths		= 10000;
 	private final int numberOfFactors	= 1;
@@ -116,14 +120,19 @@ public class TestCaplet {
 
 	
 
-	public CalibrationProduct createCalibrationItem( double weight, double maturityMinusLengthLibor, final double moneyness, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
+	public CalibrationProduct createCalibrationItem( double weight, double maturity, final double moneyness, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
 		double strike = 0.004783;
 		double dtLibor= 0.5;
+		double maturityMinusLengthLibor = maturity - dtLibor;
 		CapletOnBackwardLookingRate capletBackward = new CapletOnBackwardLookingRate(maturityMinusLengthLibor, dtLibor, strike, dtLibor, false);			
 		return new CalibrationProduct(capletBackward, targetVolatility, weight);
 	}
-		
-    @Test
+	
+	public static void main(final String[] args) throws CalculationException, SolverException {
+		final CalibrationBackwardCaplet test = new CalibrationBackwardCaplet();
+		test.testATMSwaptionCalibration();
+	}
+
 	public void testATMSwaptionCalibration() throws CalculationException, SolverException {
 		
 		 final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
@@ -141,7 +150,7 @@ public class TestCaplet {
 
 		final String[] atmExpiries = {"1Y", "18M", "2Y", "3Y", "4Y", "5Y", "7Y", "10Y", "15Y", "20Y", "25Y", "30Y" };
 
-		final double[] atmNormalVolatilities = {0.002324,0.002465,0.002790,0.003492,0.004163,0.004634,0.005203,0.00555,0.00547,0.00533,0.00513,0.0049};
+		final double[] atmNormalVolatilities = {0.002324,0.002465,0.002790,0.003492,0.004163,0.004634,0.005203,0.00555,0.00547,0.00533};
 			
 		final LocalDate referenceDate = LocalDate.of(2020, Month.JULY, 31);
 		final BusinessdayCalendarExcludingTARGETHolidays cal = new BusinessdayCalendarExcludingTARGETHolidays();
@@ -168,7 +177,7 @@ public class TestCaplet {
 			calibrationProducts.add(createCalibrationItem(weight, exercise, moneyness, targetVolatility, forwardCurve, discountCurve));
 			calibrationItemNames.add(atmExpiries[i]);
 		}
-		final double lastTime	= 31.0;
+		final double lastTime	= 21.0;
 		final double dtLibor	= 0.5;
 		final double dt	= 0.125;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
@@ -184,7 +193,7 @@ public class TestCaplet {
 		for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.2/100;}
 
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
-		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.0005, 0.10, 0.0005, true);
+		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.0002, 0.0005, 0.10, 0.0005, true);
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization,optionMaturityDiscretization,timeToMaturityDiscretization, 0.50 / 100);
 		
 		final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecayWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
@@ -243,7 +252,7 @@ public class TestCaplet {
 			System.out.println(p);
 		}
 
-		final EulerSchemeFromProcessModel process = new EulerSchemeFromProcessModel(brownianMotion);
+		final EulerSchemeFromProcessModel process = new EulerSchemeFromProcessModel(mercurioModelCalibrated, brownianMotion);
 		final LIBORModelMonteCarloSimulationModel simulationMercurioCalibrated = new LIBORMonteCarloSimulationFromLIBORModel(mercurioModelCalibrated, process);
 
 		System.out.println("\nValuation on calibrated model:");

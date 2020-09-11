@@ -5,7 +5,6 @@
  */
 package com.albertozanon.MercurioModelTest;
 
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +34,7 @@ import com.albertozanon.MercurioModel.LIBORMarketModelFromCovarianceModelWithMer
 import com.albertozanon.MercurioModel.LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification;
 import com.albertozanon.MercurioModel.LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification;
 import com.albertozanon.MercurioModel.VolatilityReductionMercurioModel;
+import com.albertozanon.TimeHomogeneousTest.LIBORMarketModelTimeHomogeneousCalibrationTest;
 
 import net.finmath.exception.CalculationException;
 import net.finmath.marketdata.calibration.ParameterObject;
@@ -96,6 +96,13 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 
 	private final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
 
+	
+	
+	public static void main(final String[] args) throws CalculationException, SolverException {
+		final LIBORMarketModelWithMercurioModificationCalibrationTest test = new LIBORMarketModelWithMercurioModificationCalibrationTest();
+		test.testATMSwaptionCalibration();
+	}
+	
 	private CalibrationProduct createCalibrationItem(double weight, double exerciseDate, double swapPeriodLength, int numberOfPeriods, double moneyness, double targetVolatility, String targetVolatilityType, ForwardCurve forwardCurve, DiscountCurve discountCurve) throws CalculationException { 
 
 		final double[]	fixingDates			= new double[numberOfPeriods];
@@ -142,7 +149,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 	@Test
 	public void testATMSwaptionCalibration() throws CalculationException, SolverException {
 
-		final int numberOfPaths		= 50000; // ideale è 10'000 paths!
+		final int numberOfPaths		= 70000; // ideale è 10'000 paths!
 		final int numberOfFactors	= 1;
 
 		final long millisCurvesStart = System.currentTimeMillis();
@@ -266,7 +273,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		 * Create a simulation time discretization
 		 */
 		// If simulation time is below libor time, exceptions will be hard to track.
-		final double lastTime	= 30.0;
+		final double lastTime	= 21.0;
 		final double dtLibor	= 0.5;
 		final double dt	= 0.125;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
@@ -282,7 +289,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.2/100;}
 
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
-		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, -0.001, 0.0005, 0.2, 0.002, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
+		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, -0.0001, 0.00035, 0.075, 0.0005, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization,optionMaturityDiscretization,timeToMaturityDiscretization, 0.50 / 100);
 		
 		final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecayWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
@@ -788,13 +795,13 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		}
 		final double rms = Math.sqrt(squaredErrorSum/calibrationProducts.size());
 
-		System.out.println("Independent checked acccurary: " + rms);
-
-		System.out.println("Calibrated discount curve: ");
-		for(int i=0; i<curveMaturities.length; i++) {
-			final double maturity = curveMaturities[i];
-			System.out.println(maturity + "\t" + calibratedModel.getDiscountCurve(discountCurveInterpolation.getName()).getDiscountFactor(maturity));
-		}
+//		System.out.println("Independent checked acccurary: " + rms);
+//
+//		System.out.println("Calibrated discount curve: ");
+//		for(int i=0; i<curveMaturities.length; i++) {
+//			final double maturity = curveMaturities[i];
+//			System.out.println(maturity + "\t" + calibratedModel.getDiscountCurve(discountCurveInterpolation.getName()).getDiscountFactor(maturity));
+//		}
 		return model;
 	}
 
