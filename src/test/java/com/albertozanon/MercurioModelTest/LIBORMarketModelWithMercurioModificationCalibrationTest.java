@@ -669,7 +669,6 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 
 	
 	
-	
 //------------------------------- getCalibratedCurve() -------------------------------
 	public AnalyticModel getCalibratedCurve() throws SolverException {
 		final String[] maturity					= { "7D", "14D", "21D", "1M", "2M", "3M", "4M", "5M", "6M", "7M", "8M", "9M", "12M", "15M", "18M", "21M", "2Y", "3Y", "4Y", "5Y", "6Y", "7Y", "8Y", "9Y", "10Y", "11Y", "12Y", "15Y", "20Y", "25Y", "30Y", "40Y", "50Y" };
@@ -803,7 +802,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 //			System.out.println(maturity + "\t" + calibratedModel.getDiscountCurve(discountCurveInterpolation.getName()).getDiscountFactor(maturity));
 //		}
 		return model;
-	}
+	} 
 
 	private static double getParSwaprate(final ForwardCurve forwardCurve, final DiscountCurve discountCurve, final double[] swapTenor) {
 		return net.finmath.marketdata.products.Swap.getForwardSwapRate(new TimeDiscretizationFromArray(swapTenor), new TimeDiscretizationFromArray(swapTenor), forwardCurve, discountCurve);
