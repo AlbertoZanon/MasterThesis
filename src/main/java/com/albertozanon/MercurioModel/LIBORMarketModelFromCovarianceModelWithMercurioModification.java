@@ -1753,5 +1753,12 @@ public class LIBORMarketModelFromCovarianceModelWithMercurioModification extends
 				+ ", driftApproximationMethod=" + driftApproximationMethod
 				+ ", measure=" + measure + ", stateSpace=" + stateSpace + "]";
 	}
+
+
+	@Override
+	public RandomVariable getBackward(MonteCarloProcess process, double time, double periodStart, double periodEnd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
 
