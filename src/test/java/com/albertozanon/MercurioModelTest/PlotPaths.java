@@ -1,4 +1,4 @@
-package com.albertozanon.MercurioModel;
+package com.albertozanon.MercurioModelTest;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -71,38 +71,6 @@ import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHo
  * @author Chrisitan Fries
  */
 public class PlotPaths {
-	@Test
-	public void test2() throws CalculationException, InterruptedException {
-
-
-		final double modelInitialValue = 100.0;
-		final double modelRiskFreeRate = 0.05;
-		final double modelVolatility = 0.20;
-
-		final double maturity = 3.0;
-		final double strike = 106.0;
-
-		// Create a model
-		final var model = new BlackScholesModel(modelInitialValue, modelRiskFreeRate, modelVolatility);
-
-		// Create a corresponding MC process
-		final var td = new TimeDiscretizationFromArray(0.0, 300, 0.01);
-		final var brownianMotion = new BrownianMotionFromMersenneRandomNumbers(td, 1, 100000, 3231);
-		final var process = new EulerSchemeFromProcessModel(model, brownianMotion);
-
-		// Using the process (Euler scheme), create an MC simulation of a Black-Scholes model
-		final var simulation = new MonteCarloAssetModel(process);
-
-		final EuropeanOption europeanOption = new EuropeanOption(maturity, strike);
-
-		try {
-			final Plot plot = Plots.createHistogramBehindValues(simulation.getAssetValue(maturity, 0 /* assetIndex */), europeanOption.getValue(0.0, simulation), 100, 5.0);
-			plot.show();
-			Thread.sleep(20000);
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
-	}
 
 
 	@Test
@@ -190,9 +158,7 @@ public class PlotPaths {
 			return path;
 		};
 		
-		Plot plot = new Plot2D(List.of(new PlotableFunction2D(0.0, 1.0, 1000, function), new PlotableFunction2D(0.0, 1.0, 1000, function2)));
-		//final Plot plot = new Plot2D(0.0, 1.0, 1000, Arrays.asList(
-				//new Named<DoubleUnaryOperator>("Maturity 1", function)));
+		Plot plot = new Plot2D(List.of(new PlotableFunction2D(0.0, 1.0, 100, function), new PlotableFunction2D(0.0, 1.0, 100, function2)));
 
 		plot.setTitle("MC Simulation").setXAxisLabel("Time").setYAxisLabel("Rate's Value").setIsLegendVisible(true);
 		try {
