@@ -17,10 +17,6 @@ import net.finmath.stochastic.RandomVariable;
 import net.finmath.stochastic.Scalar;
 import net.finmath.time.TimeDiscretization;
 
-/**
- * @author Christian Fries
- * @version 1.0
- */
 public class LIBORVolatilityModelPiecewiseConstantWithMercurioModification extends LIBORVolatilityModel {
 
 	private static final long serialVersionUID = 3258093488453501312L;
@@ -43,9 +39,7 @@ public class LIBORVolatilityModelPiecewiseConstantWithMercurioModification exten
 		 * Build index map
 		 */
 		
-		//SI MERCURIO: on getVolatility()
-		//NO MERCURIO: siccome il LIBOR si ferma alla fine allora maxMaturity è proprio l'ultimo periodo definito
-		//		//	è giusto getNumberOfTimes()-1, questo è già l'ultimissimo valore dell'array liborPeriodDiscretization
+
 		final double maxMaturity = liborPeriodDiscretization.getTime(liborPeriodDiscretization.getNumberOfTimes()-1);
 		int volatilityIndex = 0;
 		for(int simulationTime=0; simulationTime<simulationTimeDiscretization.getNumberOfTimes(); simulationTime++) {
@@ -113,8 +107,12 @@ public class LIBORVolatilityModelPiecewiseConstantWithMercurioModification exten
 		this.timeToMaturityDiscretization = timeToMaturityDiscretization;
 		this.isCalibrateable = isCalibrateable;
 	}
-// Mi raccomando! la reale piecewise constant volatility è data dalla matrice volatility[simulationTime][timeToMaturity]).. le altre discretizzazioni serve solo per fare check in pratica
-// ---------> praticamente crea un vettore volatility[volatilityIndex] e ogni elemento del vettore ha lo stesso valore (che era stato passato dalla variabile "final double[] volatility" che è un vettore di un solo elemento (nel nostro caso di LIBORMarketModelCalibrationTest)
+	
+	// ----------> IMPORTANTE
+		// praticamente timeToMaturityDiscretization ti dice a quale LIBOR ci stiamo riferendeo quindi se prendi una discretizzazione annuale significa che, se i libor sono trimestrali, partendo dAL TEMPO 0, i primi 4 libor avranno lo stesso valore della volatiltà poi i secondi 4, avranno un'altra volatilità è cosi via.. rappresenta l'asse vertical della tua idea delle volatilità del LIBOR, mentre la simulationDiscretization è l'asse orizzontale, cioè ti dice ogni quanto i valori della volatilità cambiano, se ad esempio trimestrale, significa che ogni volatilità resta la stesa per un trimestre di simulazione.
+		// ma per avere un piecewise constant trimestrale non basterebbe specificare quindi un timeToMaturityDiscretization? e optionMaturityDiscretization dovrebbe essere tipo (0,40).. NO! questo praticamente ti da una time-homogeneous piecewise constatn!!
+		// NB:timeToMaturityDiscretization è proprio time to maturity quindi assumendo sia trimestrale un L(0,1;0) prenderà il valore della volatilità con Index=4.
+		//  la reale piecewise constant volatility è data dalla matrice volatility[simulationTime][timeToMaturity])
 	public LIBORVolatilityModelPiecewiseConstantWithMercurioModification(final RandomVariableFactory abstractRandomVariableFactory, final TimeDiscretization timeDiscretization, final TimeDiscretization liborPeriodDiscretization, final TimeDiscretization simulationTimeDiscretization, final TimeDiscretization timeToMaturityDiscretization, final double[] volatility, final boolean isCalibrateable) {
 		super(timeDiscretization, liborPeriodDiscretization);
 
@@ -204,7 +202,7 @@ public class LIBORVolatilityModelPiecewiseConstantWithMercurioModification exten
 		final double time             = getTimeDiscretization().getTime(timeIndex);	
 //----->	
 //MERCURIO:
-//final double maturity         = getLiborPeriodDiscretization().getTime(liborIndex);
+//		final double maturity         = getLiborPeriodDiscretization().getTime(liborIndex);
 		final double maturity         = getLiborPeriodDiscretization().getTime(liborIndex+1);
 		final double timeToMaturity   = maturity-time;
 

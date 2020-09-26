@@ -16,7 +16,7 @@ import net.finmath.time.TimeDiscretization;
 /**
  * Implements the volatility model
  * \[
- * 	\sigma_{i}(t_{j}) = ( a + b (T_{i}-t_{j}) ) exp(-c (T_{i}-t_{j})) + d \text{.}
+ * 	\sigma_{i}(t_{j}) = ( a + b (T_{i+1}-t_{j}) ) exp(-c (T_{i+1}-t_{j})) + d \text{.}
  * \]
  *
  * The parameters here have some interpretation:
@@ -38,8 +38,6 @@ import net.finmath.time.TimeDiscretization;
  * \]
  * on the time discretization \( \{ t_{j} \} \). For the exact integration of this formula see {@link LIBORVolatilityModelFourParameterExponentialFormIntegrated}.
  *
- * @author Christian Fries
- * @version 1.0
  */
 public class LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification extends LIBORVolatilityModel {
 

@@ -65,13 +65,11 @@ import net.finmath.time.TimeDiscretization;
 import net.finmath.time.TimeDiscretizationFromArray;
 import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHolidays;
 
-/**
- * Testing Plot2D.
- *
- * @author Chrisitan Fries
- */
 public class PlotPaths {
-
+	
+	/**
+	 * This class plot two paths of the FMM with a Rebonato volatility functional form.
+	 */
 
 	@Test
 	public void test() throws SolverException, CalculationException {
@@ -93,7 +91,7 @@ public class PlotPaths {
 		final DiscountCurve discountCurve = curveModel.getDiscountCurve("discountCurve-EUR");
 		//		curveModel.addCurve(discountCurve.getName(), discountCurve);
 		final double lastTime	= 1.0;
-		final double dtLibor	= 0.2;
+		final double dtLibor	= 0.25;
 		final double dt	= 0.001;
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
 		final TimeDiscretization liborPeriodDiscretization = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dtLibor), dtLibor);

@@ -109,10 +109,6 @@ public class LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModi
 	 */
 	
 	
-// ----------> IMPORTANTE
-	// praticamente timeToMaturityDiscretization ti dice a quale LIBOR ci stiamo riferendeo quindi se prendi una discretizzazione annuale significa che, se i libor sono trimestrali, partendo dAL TEMPO 0, i primi 4 libor avranno lo stesso valore della volatiltà poi i secondi 4, avranno un'altra volatilità è cosi via.. rappresenta l'asse vertical della tua idea delle volatilità del LIBOR, mentre la simulationDiscretization è l'asse orizzontale, cioè ti dice ogni quanto i valori della volatilità cambiano, se ad esempio trimestrale, significa che ogni volatilità resta la stesa per un trimestre di simulazione.
-	// ma per avere un piecewise constant trimestrale non basterebbe specificare quindi un timeToMaturityDiscretization? e optionMaturityDiscretization dovrebbe essere tipo (0,40).. NO! questo praticamente ti da una time-homogeneous piecewise constatn!!
-	// NB:timeToMaturityDiscretization è proprio time to maturity quindi assumendo sia trimestrale un L(0,1;0) prenderà il valore della volatilità con Index=4.
 	public LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(final TimeDiscretization timeDiscretization, final TimeDiscretization liborPeriodDiscretization, final TimeDiscretization timeToMaturityDiscretization, final double[] volatility) {
 		this(new RandomVariableFromArrayFactory(), timeDiscretization, liborPeriodDiscretization, timeToMaturityDiscretization, volatility);
 	}

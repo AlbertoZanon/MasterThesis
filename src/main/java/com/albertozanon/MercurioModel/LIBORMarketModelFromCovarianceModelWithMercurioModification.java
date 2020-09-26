@@ -46,10 +46,10 @@ import net.finmath.time.TimeDiscretization;
 import net.finmath.time.TimeDiscretizationFromArray;
 
 /**
- * Implements a (generalized) LIBOR market model with generic covariance structure (lognormal, normal, displaced or stochastic volatility)
+ * Implements a (generalized) Forward market model with generic covariance structure (lognormal, normal, displaced or stochastic volatility)
  * with some drift approximation methods.
  * <br><br>
- * In its default case the class specifies a multi-factor LIBOR market model in its log-normal formulation, that is
+ * In its default case the class specifies a multi-factor Forward market model in its log-normal formulation, that is
  * <i>L<sub>j</sub> = exp(Y<sub>j</sub>) </i> where
  * \[
  * 		dY_{j} = \mu_{j} dt + \lambda_{1,j} dW_{1} + \ldots + \lambda_{m,j} dW_{m}
@@ -74,7 +74,7 @@ import net.finmath.time.TimeDiscretizationFromArray;
  * </ul>
  *
  * <br>
- * The class specifies a LIBOR market model, that is
+ * The class specifies a Forward market model, that is
  * <i>L<sub>j</sub> = f(Y<sub>j</sub>) </i> where
  * <ul>
  * 	<li>
@@ -138,8 +138,6 @@ import net.finmath.time.TimeDiscretizationFromArray;
  * of parametric models of the instantaneous covariance see
  * {@link net.finmath.montecarlo.interestrate.models.covariance.AbstractLIBORCovarianceModelParametric#getCloneCalibrated(LIBORMarketModel, CalibrationProduct[], Map)}.
  *
- * @author Christian Fries
- * @version 1.2
  * @see net.finmath.montecarlo.process.MonteCarloProcess The interface for numerical schemes.
  * @see net.finmath.montecarlo.model.ProcessModel The interface for models provinding parameters to numerical schemes.
  * @see net.finmath.montecarlo.interestrate.models.covariance.AbstractLIBORCovarianceModel The abstract covariance model plug ins.
@@ -1123,8 +1121,7 @@ public class LIBORMarketModelFromCovarianceModelWithMercurioModification extends
 		int		firstLiborIndex		= this.getLiborPeriodIndex(time); // MERCURIO: senza il + 1 (in mercurio se t=T_i il tasso non è ancora fixed, deve arrivare fino a T_{i+1}
 		if(firstLiborIndex<0) {
 			firstLiborIndex = -firstLiborIndex-1-1;				   	  // MERCURIO: sostituisci il + 1 con - 1, pensaci!
-	//	 firstLiborIndex = -firstLiborIndex-1 + 1;
-	//	 System.out.println("timeIndex: " + timeIndex + "   time: " + time + "   firstLiborIndex: " + firstLiborIndex );
+	//	 	firstLiborIndex = -firstLiborIndex-1 + 1;
 		}
 
 		final RandomVariable		zero	= getRandomVariableForConstant(0.0);

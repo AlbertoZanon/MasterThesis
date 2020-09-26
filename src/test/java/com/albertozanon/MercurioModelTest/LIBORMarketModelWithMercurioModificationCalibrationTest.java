@@ -86,9 +86,7 @@ import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHo
 import net.finmath.time.daycount.DayCountConvention_ACT_365;
 
 /**
- * This class tests the LIBOR market model and products.
- *
- * @author Christian Fries
+ * This class tests the Forward market model on a swaption matrix.
  */
 public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 
@@ -136,9 +134,6 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 	}
 
 	
-//	testSwaptionSmileCalibration()  <-- REMOVED
-
-	// 						PART 2 
 	/**
 	 * Brute force Monte-Carlo calibration of swaptions.
 	 *
@@ -284,14 +279,14 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, seed /* seed */); 
 		TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00,0.25, 0.5, 1.00, 2.00, 3.00,  5.00,  7.00,  10.0, 15.0, 21.0);
 		//TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00, 6.0, 7.00, 8.0,9.0, 10.0, 12.5, 15.0, 21.0);		// needed if you use LIBORVolatilityModelPiecewiseConstantWithMercurioModification: TimeDiscretization  = new TimeDiscretizationFromArray(0.0, 0.25, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0);
-	    // TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 0.5, 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9,00, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0 , 17.0, 18.0, 19.0 ,20.0,21.0);
-      //TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 21, 1.0);
+	    //TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 0.5, 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9,00, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0 , 17.0, 18.0, 19.0 ,20.0,21.0);
+        //TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 21, 1.0);
 
 		double[] arrayValues = new double [timeToMaturityDiscretization.getNumberOfTimes()];
 		for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.1/100;}
 
-	final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
-		//LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.0005, 0.2, 0.00005, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
+	    //final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
+		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.002, 0.0005, 0.2, 0.00005, true); //0.20/100.0, 0.05/100.0, 0.10, 0.05/100.0, 
 		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization,optionMaturityDiscretization,timeToMaturityDiscretization, 0.50 / 100);
 		
 		final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecayWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
@@ -308,7 +303,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 
 		properties.put("measure", LIBORMarketModelFromCovarianceModelWithMercurioModification.Measure.SPOT.name());
 
-		// Choose normal state space for the Euler scheme (the covariance model above carries a linear local volatility model, such that the resulting model is log-normal).
+		// Choose normal state space for the Euler scheme (the covariance model above carries a linear local volatility model).
 		properties.put("stateSpace", LIBORMarketModelFromCovarianceModelWithMercurioModification.StateSpace.NORMAL.name());
 
 		// Set calibration properties (should use our brownianMotion for calibration - needed to have to right correlation).
@@ -325,8 +320,6 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		Arrays.fill(parameterLowerBound, 0.0);
 		Arrays.fill(parameterUpperBound, Double.POSITIVE_INFINITY);
 
-		//		optimizerFactory = new OptimizerFactoryCMAES(accuracy, maxIterations, parameterLowerBound, parameterUpperBound, parameterStandardDeviation);
-
 		// Set calibration properties (should use our brownianMotion for calibration - needed to have to right correlation).
 		final Map<String, Object> calibrationParameters = new HashMap<>();
 		calibrationParameters.put("accuracy", accuracy);
@@ -338,7 +331,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 		final long millisCalibrationStart = System.currentTimeMillis();
 
 		/*
-		 * Create corresponding LIBOR Market Model
+		 * Create corresponding Forward Market Model
 		 */
 		final CalibrationProduct[] calibrationItemsLMM = new CalibrationProduct[calibrationItemNames.size()];
 		for(int i=0; i<calibrationItemNames.size(); i++) {
@@ -566,7 +559,7 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 			double ratioImpliedVol = impliedVolBackward/impliedVolClassical;
 			double error = (analyticFormulaPaper-ratioImpliedVol)/analyticFormulaPaper;
 
-			if (liborIndex<5) {		//da i valori del caplet per maturity 1.5Y, 2Y, 2.5Y,.
+			if (liborIndex<5) {		//da i valori del caplet per maturity 1.0Y, 1.5Y, 2Y, 2.5Y, 3Y
 				if (mktData[mktDataIndex] == 0.0) {
 					System.out.println("Caplet on B(" + formatterTimeValue.format(maturityMinusLengthLibor) + ", "
 							+ formatterTimeValue.format(fixBackwardTime) + "; "
@@ -662,21 +655,6 @@ public class LIBORMarketModelWithMercurioModificationCalibrationTest {
 			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + "."+ "\t" + "Average: " + avgBackwardLookingRate);
 			timeIndex2 +=  4;
 		}
-		
-		
-	//CORRETTO, CALIBRA LA IR CURVE E BASTA, L(0) è CORRETTO!	
-//		timeIndex2 =  0;
-//		System.out.println("\n CHECK OF NON-CALIBRATED MODEL :");
-//		for( liborIndex=0; liborIndex<liborPeriodDiscretization.getNumberOfTimes()-1; liborIndex++) {
-//			double evaluationTime=timeDiscretizationFromArray.getTime(timeIndex2);
-//			double liborStartingTime=liborPeriodDiscretization.getTime(liborIndex);
-//			double liborEndingTime=liborPeriodDiscretization.getTime(liborIndex+1);
-//			RandomVariable backwardLookingRate =  simulationMercurioModelNONcalibrated.getLIBOR(timeIndex2, liborIndex);
-//			double avgBackwardLookingRate =backwardLookingRate.getAverage();
-//			System.out.println("Backward B(" + formatterTimeValue.format(liborStartingTime) +  ", " + formatterTimeValue.format(liborEndingTime) + ") evaluated in t= " + formatterTimeValue.format(evaluationTime) + ", avg. value " + avgBackwardLookingRate);
-//			timeIndex2 +=  2;
-//		}
-//		
 
 	}
 

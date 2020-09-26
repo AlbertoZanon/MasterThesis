@@ -105,13 +105,12 @@ import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHo
 import net.finmath.time.daycount.DayCountConvention_ACT_365;
 
 /**
- * This class tests the LIBOR market model and products.
+ * This classc calibrate the FMM on synthetic backward caplet.
  *
- * @author Christian Fries
  */
 public class CalibrationBackwardCapletOnMercurio {
 
-	private final int numberOfPaths		= 20000;
+	private final int numberOfPaths		= 40000;
 	private final int numberOfFactors	= 1;
 
 	private static DecimalFormat formatterValue		= new DecimalFormat(" ##0.0000%;-##0.0000%", new DecimalFormatSymbols(Locale.ENGLISH));
@@ -120,7 +119,7 @@ public class CalibrationBackwardCapletOnMercurio {
 
 	
 
-	public CalibrationProduct createCalibrationItem( double weight, double maturity, final double moneyness, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
+	public CalibrationProduct createCalibrationItem( double weight, double maturity, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
 		double strike = 0.004783;
 		double dtLibor= 0.5;
 		double maturityMinusLengthLibor = maturity - dtLibor;
@@ -168,13 +167,12 @@ public class CalibrationBackwardCapletOnMercurio {
 				continue;
 			}
 
-			final double	moneyness			= 0.0;
 			final double	targetVolatility	= atmNormalVolatilities[i];
 
 
 			final double	weight = 1.0;
 
-			calibrationProducts.add(createCalibrationItem(weight, exercise, moneyness, targetVolatility, forwardCurve, discountCurve));
+			calibrationProducts.add(createCalibrationItem(weight, exercise, targetVolatility, forwardCurve, discountCurve));
 			calibrationItemNames.add(atmExpiries[i]);
 		}
 		final double lastTime	= 21.0;
@@ -183,18 +181,8 @@ public class CalibrationBackwardCapletOnMercurio {
 		final TimeDiscretization timeDiscretizationFromArray = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dt), dt);
 		final TimeDiscretization liborPeriodDiscretization = new TimeDiscretizationFromArray(0.0, (int) (lastTime / dtLibor), dtLibor);
 		
-		final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, 31415  /* seed */);
-//		TimeDiscretization optionMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00,  7.00,  10.0, 15.0, 20.0, 25.0, 31.0);
-		TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 1.00, 2.00, 3.00, 4.00, 5.00,  7.00,  10.0, 15.0, 20.0, 25.0, 31.0);		// needed if you use LIBORVolatilityModelPiecewiseConstantWithMercurioModification: TimeDiscretization  = new TimeDiscretizationFromArray(0.0, 0.25, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0);
-	//	TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 0.25, 0.5, 0.75, 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9,00, 10.0, 12.5, 15.0, 17.5, 20.0, 22.5, 25.0, 27.5, 31.0);
-		//TimeDiscretization timeToMaturityDiscretization = new TimeDiscretizationFromArray(0.00, 31, 1.0);
-
-		double[] arrayValues = new double [timeToMaturityDiscretization.getNumberOfTimes()];
-		for (int i=0; i<timeToMaturityDiscretization.getNumberOfTimes(); i++) {arrayValues[i]= 0.2/100;}
-
-		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelTimeHomogenousPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, timeToMaturityDiscretization, arrayValues);
+		final BrownianMotion brownianMotion = new net.finmath.montecarlo.BrownianMotionLazyInit(timeDiscretizationFromArray, numberOfFactors, numberOfPaths, 31534  /* seed */);
 		LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialFormWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, 0.0002, 0.0005, 0.10, 0.0005, true);
-		//final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelPiecewiseConstantWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization,optionMaturityDiscretization,timeToMaturityDiscretization, 0.50 / 100);
 		
 		final LIBORCorrelationModel correlationModel = new LIBORCorrelationModelExponentialDecayWithMercurioModification(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, 0.05, false);
 		final AbstractLIBORCovarianceModelParametric covarianceModelParametric = new LIBORCovarianceModelFromVolatilityAndCorrelation(timeDiscretizationFromArray, liborPeriodDiscretization, volatilityModel, correlationModel);

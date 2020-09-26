@@ -5,6 +5,8 @@
  */
 package com.albertozanon.TimeHomogeneouLMM;
 
+import com.albertozanon.MercurioModel.CapletOnBackwardLookingRate.ValueUnit;
+
 import net.finmath.exception.CalculationException;
 import net.finmath.functions.AnalyticFormulas;
 import net.finmath.montecarlo.interestrate.LIBORModelMonteCarloSimulationModel;
@@ -12,10 +14,8 @@ import net.finmath.montecarlo.interestrate.products.AbstractLIBORMonteCarloProdu
 import net.finmath.stochastic.RandomVariable;
 
 /**
- * Implements the pricing of a Caplet using a given <code>AbstractLIBORMarketModel</code>.
+ * Create a backward caplet or a backward floorlet.
  *
- * @author Christian Fries
- * @version 1.0
  */
 public class CapletOnCompoundedBackward extends AbstractLIBORMonteCarloProduct {
 
@@ -58,17 +58,36 @@ public class CapletOnCompoundedBackward extends AbstractLIBORMonteCarloProduct {
 	 * @param isFloorlet If true, this object will represent a floorlet, otherwise a caplet.
 	 * @param valueUnit The unit of the value returned by the <code>getValue</code> method.
 	 */
-	public CapletOnCompoundedBackward(final double maturity, final double periodLength, final double strike, final double daycountFraction, final boolean isFloorlet) {
+	public CapletOnCompoundedBackward(final double maturity, final double periodLength, final double strike, final double daycountFraction, final boolean isFloorlet, final ValueUnit valueUnit) {
 		super();
 		this.maturity = maturity;
 		this.periodLength = periodLength;
 		this.strike = strike;
 		this.daycountFraction = daycountFraction;
 		this.isFloorlet = isFloorlet;
-		this.valueUnit = ValueUnit.NORMALVOLATILITY;
+		this.valueUnit = valueUnit;
 	}
 
-
+	/**
+	 * Create a caplet or a floorlet.
+	 *
+	 * A caplet pays \( max(L-K,0) * daycountFraction \) at maturity+periodLength
+	 * where L is fixed at maturity.
+	 *
+	 * A floorlet pays \( -min(L-K,0) * daycountFraction \) at maturity+periodLength
+	 * where L is fixed at maturity.
+	 *
+	 * ValueUnit is set by default as NORMALVOLATILITY.
+	 *
+	 * @param maturity The fixing date given as double. The payment is at the period end.
+	 * @param periodLength The length of the forward rate period in ACT/365 convention.
+	 * @param strike The strike given as double.
+	 * @param isFloorlet If true, this object will represent a floorlet, otherwise a caplet.
+	 */
+	public CapletOnCompoundedBackward(final double maturity, final double periodLength, final double strike, final double daycountFraction,  final boolean isFloorlet) {
+		this(maturity, periodLength, strike, daycountFraction, isFloorlet, ValueUnit.NORMALVOLATILITY);
+	}
+	
 	
 	/**
 	 * This method returns the value random variable of the product within the specified model, evaluated at a given evalutationTime.

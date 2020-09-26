@@ -80,9 +80,8 @@ import net.finmath.time.businessdaycalendar.BusinessdayCalendarExcludingTARGETHo
 import net.finmath.time.daycount.DayCountConvention_ACT_365;
 
 /**
- * This class tests the LIBOR market model and products.
+ * This class calibrate the time-homogenous LMM on synthetic backward caplet.
  *
- * @author Christian Fries
  */
 public class CalibrationBackwardCapletOnTimeHomogeneous {
 
@@ -95,7 +94,7 @@ public class CalibrationBackwardCapletOnTimeHomogeneous {
 
 	
 
-	public CalibrationProduct createCalibrationItem( double weight, double maturity, final double moneyness, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
+	public CalibrationProduct createCalibrationItem( double weight, double maturity, final double targetVolatility, final ForwardCurve forwardCurve, final DiscountCurve discountCurve) throws CalculationException {
 		double strike = 0.004783;
 		double dtLibor= 0.5;
 		double maturityMinusLengthLibor = maturity - dtLibor;
@@ -141,13 +140,10 @@ public class CalibrationBackwardCapletOnTimeHomogeneous {
 				continue;
 			}
 
-			final double	moneyness			= 0.0;
 			final double	targetVolatility	= atmNormalVolatilities[i];
-
-
 			final double	weight = 1.0;
 
-			calibrationProducts.add(createCalibrationItem(weight, exercise, moneyness, targetVolatility, forwardCurve, discountCurve));
+			calibrationProducts.add(createCalibrationItem(weight, exercise, targetVolatility, forwardCurve, discountCurve));
 			calibrationItemNames.add(atmExpiries[i]);
 		}
 		LIBORModelMonteCarloSimulationModel simulationCalibrated = null;
@@ -169,7 +165,6 @@ public class CalibrationBackwardCapletOnTimeHomogeneous {
 		//AbstractLIBORCovarianceModelParametric covarianceModelParametric = new LIBORCovarianceModelExponentialForm5Param(timeDiscretizationFromArray, liborPeriodDiscretization, numberOfFactors, new double[] { 0.20/100.0, 0.1/100.0, 0.10, 0.05/100.0, 0.10} );
 		AbstractLIBORCovarianceModelParametric	covarianceModelParametric = new LIBORCovarianceModelFromVolatilityAndCorrelation(timeDiscretizationFromArray, liborPeriodDiscretization, volatilityModel, correlationModel);
 		TermStructureCovarianceModelParametric termStructureCovarianceModel = new TermStructCovarianceModelFromLIBORCovarianceModelParametric(null, covarianceModelParametric );
-
 		
 		int k=0;
 		// Set model properties
@@ -223,7 +218,6 @@ public class CalibrationBackwardCapletOnTimeHomogeneous {
 
 		System.out.println("\nCalibrated parameters are:");
 		final double[] param = ((LIBORMarketModelWithTenorRefinement) liborMarketModelCalibrated).getCovarianceModel().getParameter();
-		//		((AbstractLIBORCovarianceModelParametric) liborMarketModelCalibrated.getCovarianceModel()).setParameter(param);
 		for (final double p : param) {
 			System.out.println(p);
 		}
